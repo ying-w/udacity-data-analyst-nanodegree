@@ -1,0 +1,6 @@
+https://en.wikipedia.org/wiki/Enron_scandal
+http://scikit-learn.org/stable/tutorial/machine_learning_map/ (and many other pages on scikit learn)
+https://civisanalytics.com/blog/data-science/2016/01/06/workflows-python-using-pipeline-gridsearchcv-for-compact-code/
+https://en.wikipedia.org/wiki/Precision_and_recall 
+
+udacity forums

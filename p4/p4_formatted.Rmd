@@ -1,0 +1,600 @@
+---
+title: "P4 Exploring financial contributions from florida in 2008 election"
+author: "Ying Wu"
+date: "2/15/2016"
+output: html_document
+---
+
+```{r global_options, include=FALSE} 
+knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/', echo=FALSE,
+                      warning=FALSE, message=FALSE)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
+# Load all of the packages that you end up using
+# in your analysis in this code chunk.
+
+# Notice that the parameter "echo" was set to FALSE for this code chunk.
+# This prevents the code from displaying in the knitted HTML output.
+# You should set echo=FALSE for all code chunks in your file.
+
+library(ggplot2)
+library(data.table)
+library(choroplethr)
+library(choroplethrZip)
+library(ggmap)
+```
+
+Florida is the swing state with the most votes. After going to Bush
+ (republican) in 2008, it went to Obama (democrat) in 2008. Lets look deeper
+ into the financial contribution breakdowns for this election.
+
+Description of columns can be found [here](ftp://ftp.fec.gov/FEC/Presidential_Map/2016/DATA_DICTIONARIES/CONTRIBUTOR_FORMAT.txt)
+
+# Load the data
+
+First some preprocessing to download and parse the file
+```
+wget ftp://ftp.fec.gov/FEC/Presidential_Map/2008/P00000001/P00000001-FL.zip
+unzip P00000001-FL.zipx
+mv P00000001-FL.csv 2008-florida-funding.csv
+sed -i 's/,$//' 2008-florida-funding.csv # remove trailing comma
+```
+
+# Univariate Analysis
+
+Next lets get a summary of the data and data.tables (more efficient)
+```{r Load_the_Data}
+data = read.csv("~/Downloads/2008-florida-funding.csv", header=T, 
+                row.names = NULL, strip.white = TRUE, quote="\"", 
+                stringsAsFactors=FALSE)
+data = as.data.table(data)
+data$contb_receipt_dt = as.Date(data$contb_receipt_dt, format = "%d-%b-%y")
+dim(data)
+head(data)
+summary(data)
+```
+
+### What is the structure of your dataset?
+My dataset has ~21k rows and 18 columns. The columns are mostly strings with 
+ only one numeric field of interest. This field of interest is donations
+ amount (contb_receipt_amt) and quartiles for donations are between $30 and 
+ $250. Quartiles for when donation happened was between January 31st 
+ and September 4th of 2008.
+
+ 
+Next, I will investigate distribution of the different character columns
+```{r table1}
+length(unique(data$cmte_id))
+length(unique(data$cand_id))
+length(unique(data$cand_nm))
+table(data$cand_nm, data$cmte_id) 
+```
+McCain has two committee ids
+
+```{r table2}
+# top 5 candidates by number of entries
+head(sort(table(data$cand_nm), decreasing = TRUE), n = 5) 
+# top cities (many large and well known)
+head(sort(table(data$contbr_city), decreasing = TRUE), n = 12)
+table(data$contbr_st) # sanity check, should be all FL
+# zip codes needs cleanup, inconsistant format
+head(sort(table(data$contbr_zip), decreasing = TRUE), n = 12)
+data[,contbr_zip2 := substring(contbr_zip, 1, 5)]
+head(sort(table(data$contbr_zip2), decreasing = TRUE), n = 12)
+```
+Cleaned up zip codes, otherwise geography data looks as expected
+```{r table3}
+head(sort(table(data$contbr_employer), decreasing = TRUE), n = 15)
+data[contbr_employer == "SELF-EMPLOYED"]$contbr_employer = "SELF EMPLOYED"
+data[contbr_employer == "SELF"]$contbr_employer = "SELF EMPLOYED"
+data[contbr_employer == "NONE"]$contbr_employer = "NOT EMPLOYED"
+# using "" as no response
+data[contbr_employer == "INFORMATION REQUESTED"]$contbr_employer = ""
+data[contbr_employer == "INFORMATION REQUESTED PER BEST EFFORTS"]$contbr_employer = ""
+data[contbr_employer == "N/A"]$contbr_employer = ""
+
+# suprisingly most fall into first 3 categories
+head(sort(table(data$contbr_employer), decreasing = TRUE), n = 12)
+head(sort(table(data$contbr_occupation), decreasing = TRUE), n = 12) 
+data[contbr_occupation == "INFORMATION REQUESTED"]$contbr_occupation = ""
+data[contbr_occupation == "INFORMATION REQUESTED PER BEST EFFORTS"]$contbr_occupation = ""
+```
+Occupation and employer data is quite messy, a lot of people did not answer.
+ I used blank ("") to indicate no response. I cleaned it up a bit based on what 
+ the top values were. There seems to be a lot of "President" (occupation) who 
+ donate. Most of the donors seem to fall under "NOT EMPLOYED", "SELF EMPLOYED", 
+ "BLANK" or "RETIRED". 
+```{r table4}
+table(data$form_tp)
+table(data$election_tp)
+data[election_tp == "G2006"] #not sure how this got here
+data = data[election_tp != "G2006"]
+```
+Somehow a donation for 2006 general election snuck into this dataset. 
+I removed it. Not sure why some election type values are blank (38)
+
+```{r addparty_namechange}
+data[,Party := "R"]
+data[cand_nm == "Clinton, Hillary Rodham"]$Party = "D"
+data[cand_nm == "Dodd, Christopher J"]$Party = "D"
+data[cand_nm == "Edwards, John"]$Party = "D"
+data[cand_nm == "Gravel, Mike"]$Party = "D" # became Libertarian
+data[cand_nm == "Kucinich, Dennis J"]$Party = "D"
+data[cand_nm == "Obama, Barack"]$Party = "D"
+data[cand_nm == "Richardson, Bill"]$Party = "D"
+data[cand_nm == "Clinton, Hillary Rodham"]$cand_nm = "Clinton, Hillary"
+data_orig = data
+```
+Add the party affiliation for each of the candidates and 
+ shortened Hillary's name so make plotting labels easier.
+
+
+### What is/are the main feature(s) of interest in your dataset?
+The main feature of interest is donation amount (contb_receipt_amt).
+
+### What other features in the dataset do you think will help support your investigation into your feature(s) of interest?
+Supporting features include candidate name (cand_nm), donation type 
+ (election_tp), donor name (contbr_nm), location (city, zip), work
+ (employer, occupation), date of donation (contb_receipt_dt) 
+
+### Did you create any new variables from existing variables in the dataset?
+Yes, I added a party field and a proper zip code field.
+
+### Of the features you investigated, were there any unusual distributions? Did you perform any operations on the data to tidy, adjust, or change the form of the data? If so, why did you do this?
+I cleaned up the zip codes and tried to clean up occupation and 
+ employer fields to little success. I converted date field to date object.
+ Donation amount field is sometimes negative.
+ 
+## Overall contributions
+
+Next, lets investigate overall contributions to the candidate and the party
+
+```{r by_contrib}
+options(scipen=999) # disable scientific notation
+
+data_by_contrib = data[, list(Total_donation = sum(contb_receipt_amt), 
+                              N_donations = .N),
+                       by=list(cand_nm, contbr_nm, contbr_city, contbr_zip, 
+                               contbr_employer, contbr_occupation, election_tp,
+                               Party)]
+```
+Assuming that within the same location (city/zip/employer/occupation) each donor
+can be uniquely identified by name.
+
+```{r overall_amt}
+data_by_contrib[, list(Total = sum(Total_donation)), by = 
+                  list(cand_nm, election_tp)][order(cand_nm)]
+```
+Unsurprisingly, the candidates who raised the most money were the ones that ran 
+ for president (McCain and Obama). Multiple candidates with negative donations 
+ had large donations during primary but dropped out during general election.
+
+
+```{r primaries}
+p08 = data_by_contrib[election_tp == "P2008", list(Total = sum(Total_donation)),
+                      by = list(cand_nm, Party)][order(cand_nm)][
+                        order(Total, decreasing=T)]
+p08
+ggplot(head(p08), aes(x = cand_nm, y = Total, fill = Party)) + 
+  geom_bar(stat = "identity") + xlab("Candidate Name") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  ggtitle("Donation amount for top candidates during 2008 primary")
+```
+
+There is a large difference in donations from florida during the primary between
+the McCain and the other Republican candidates.
+
+```{r donationtime, echo=FALSE}
+top6 = c("Obama, Barack", "McCain, John S", "Clinton, Hillary", 
+         "Giuliani, Rudolph W", "Paul, Ron", "Romney, Mitt")
+tmp = data[cand_nm %in% top6 & contb_receipt_dt > "2006-11-04" & 
+             contb_receipt_dt < "2008-11-04", ]
+tmp = tmp[, list(ByDay = sum(contb_receipt_amt)), 
+          by = list(contb_receipt_dt, cand_nm)][order(contb_receipt_dt), 
+      list(contb_receipt_dt, ByDay, CumulativeDonations = cumsum(ByDay)), 
+          by = list(cand_nm)]
+
+ggplot(tmp, aes(x = contb_receipt_dt, y = CumulativeDonations, color = cand_nm)) + 
+  geom_line(stat = "identity", size = 1) + xlab("Date of donation") + 
+  ylab("Cumulative Donations ($)") + guides(col = guide_legend(
+    title = "Candidate Name", override.aes = list(shape = 15, size = 5))) + 
+  ggtitle("Cumulative donations for top candidates during 2008 campaign")
+```
+
+Focusing on the top fundraisers from the primary, you can see that contributions 
+ for the runnerups dried up or went negative (donors withdrawing money) when 
+ they did not win the primary. Contributions for the two candidates that won the
+ primaries (Obama and McCain) kept increasing. 
+
+```{r donation_hist}
+ggplot(data, aes(x = contb_receipt_amt)) + geom_histogram()
+```
+
+Many small donations, some are negative.
+
+```{r DvsR}
+data_by_contrib[, list(Total = sum(Total_donation)), by = Party]
+
+ggplot(data_by_contrib[, list(Total = sum(Total_donation)), by = Party], 
+      aes(x = Party, y = Total)) + geom_bar(stat = "identity")
+```
+
+Overall, democrats raised more money from florida than republicans
+
+## Largest contributions
+Next, lets have a look at which groups donated the most.
+
+```{r largest_total}
+head(data_by_contrib[, list(Total = sum(Total_donation)), 
+      by = list(contbr_nm, cand_nm, contbr_city, contbr_employer, 
+                contbr_occupation)][order(Total, decreasing=T)], 20)
+```
+Quite a few large donations supporting McCain. The occupations and employers do 
+ not appear to have a pattern.
+
+```{r largest_city}
+head(data[, list(Total = sum(contb_receipt_amt)), 
+      by = list(contbr_city, cand_nm)][order(Total, decreasing=T)], 20)
+```
+Miami is a large city and has a lot of donation to many candidates.
+Naples has one of the highest per-capita income in the US.
+
+```{r choroplethr}
+# http://rpubs.com/arilamstein/zip-vignette-1
+
+data(zip.regions)
+
+tmp = data[,list(donation = sum(contb_receipt_amt)), by=list(contbr_zip2, Party)]
+names(tmp)[1] = "region"
+tmp[Party == "R"]$donation = -tmp[Party == "R"]$donation
+tmp = tmp[, list(value = sum(donation)), by = "region"]
+setkey(tmp, region)
+
+fl_zip = as.data.table(unique(zip.regions[
+  zip.regions$state.name == "florida",]$region))
+names(fl_zip) = c("region")
+setkey(fl_zip, region)
+
+merge_zip = merge(fl_zip, tmp, all.x=TRUE)
+merge_zip[,value := ifelse(is.na(value), 0, value)]
+
+# many zip codes do not belong to florida
+head(tmp[!(region %in% fl_zip$region)])
+dim(tmp[!(region %in% fl_zip$region)])
+
+choro = ZipChoropleth$new(merge_zip)
+choro$title = "Republican vs Democrat 2008 campaign donations"
+choro$ggplot_scale = scale_fill_brewer(name="Donations", 
+                                       palette = "Spectral", drop=FALSE)
+choro$set_zoom_zip(state_zoom="florida", county_zoom=NULL, 
+                   msa_zoom=NULL, zip_zoom=NULL)
+suppressWarnings(choro$render()) # suppress warnings for zips on map not in FL
+choro$render_with_reference_map()
+```
+
+I subtracted republican donations in every zip code from democratic donations. 
+Negative (red) zip codes have more republican donation money while 
+positive (blue) zip codes have more democrat donation money.
+
+The area around Tallahasee donated more to democrats while the area around 
+Jacksonville donated more to republicans. 
+The areas around Tampa and Miami are pretty mixed.
+
+Lastly, there are 433 zip codes that do not belong to florida. 
+Next I'll plot cities instead of zip codes.
+
+```{r largest_city_map}
+gc()
+
+tmp = data[,list(Total = sum(contb_receipt_amt), 
+                 city_lookup = paste(contbr_city, "FL", sep=",")), 
+           by = list(contbr_city, cand_nm)][order(Total, decreasing=T)]
+
+top_Obama = head(tmp[cand_nm == top6[1],], 20)
+top_McCain = head(tmp[cand_nm == top6[2],], 20)
+top_Clinton = head(tmp[cand_nm == top6[3],], 20)
+top_Giuliani = head(tmp[cand_nm == top6[4],], 20)
+top_Paul = head(tmp[cand_nm == top6[5],], 20)
+top_Romney = head(tmp[cand_nm == top6[6],], 20)
+
+# topCities = rbind(top_Obama, top_McCain, top_Clinton, top_Giuliani, 
+#                   top_Paul, top_Romney)
+
+city_lookup = unique(c(top_Obama$city_lookup, top_McCain$city_lookup, 
+                       top_Clinton$city_lookup, top_Giuliani$city_lookup, 
+                       top_Paul$city_lookup, top_Romney$city_lookup))
+
+city_lookup = suppressMessages(cbind(city_lookup, geocode(city_lookup)))
+
+
+plot_map = function(city_mat) {
+  ggmap(get_map(location = c(lon = -83.2, lat = 28.1), zoom = 7)) +
+    geom_point(data = merge(city_mat, city_lookup, by="city_lookup"), 
+               alpha = 0.7, aes(x=lon, y=lat, size=Total, color = cand_nm)) + 
+    scale_size_area(max_size = 10) +
+    labs(size = "Donation amount", color = "Candidate Name")
+}
+
+plot_map(top_Obama)
+plot_map(top_McCain)
+plot_map(top_Clinton)
+plot_map(top_Giuliani)
+plot_map(top_Paul)
+plot_map(top_Romney)
+```
+
+The candidates raise a lot of money in the area around Miami. 
+Gainsville made top 20 for only  Obama and Ron Paul.
+
+```{r largest_city_map_election}
+tmp = data[cand_nm %in% top6[1:2] & election_tp == "G2008", 
+           list(Total = sum(contb_receipt_amt), city_lookup = 
+                  paste(contbr_city, "FL", sep=",")), 
+           by = list(contbr_city, cand_nm)][order(Total, decreasing=T)]
+obama_vs_mccain = rbind(head(tmp[cand_nm == top6[1]], 10), 
+                        head(tmp[cand_nm == top6[2]], 10))
+ggmap(get_map(location = c(lon = -83.2, lat = 28.1), zoom = 7)) +
+  geom_point(data = merge(obama_vs_mccain, city_lookup, by="city_lookup"), 
+             alpha = 0.7, aes(x=lon, y=lat, size=Total, color = cand_nm)) +
+  scale_size_area(max_size = 10) +
+  labs(size = "Donation amount", color = "Candidate Name") +
+  ggtitle("Top 10 cities for donations during general election")
+```
+
+During the general election, the top cities that donated mostly overlapped.
+However, most cities in florida donated more to Obama than McCain.
+
+```{r largest_employer}
+head(data[, list(Total = sum(contb_receipt_amt)), 
+      by = list(contbr_employer, cand_nm)][order(Total, decreasing=T)], 20)
+```
+Sorted by employer, not very useful.
+```{r largest_occupation}
+head(data[, list(Total = sum(contb_receipt_amt)), 
+      by = list(contbr_occupation, cand_nm)][order(Total, decreasing=T)], 20)
+```
+Sorted by occupation, also not very useful.
+```{r largest_occupation2}
+head(data[, list(Total = sum(contb_receipt_amt)/.N, N = .N), 
+      by = list(contbr_occupation, cand_nm)][order(Total, decreasing=T)], 20)
+```
+Sorted by average donation per occupation, most occupations only have 1 person.
+This means that occupations column needs further cleanup.
+
+
+```{r box_contributions}
+tmp = data_by_contrib[cand_nm %in% top6, ]
+tmp = tmp[Total_donation > 0] # exclude net negative / disbursements
+
+ggplot(tmp, aes(x = cand_nm, y = Total_donation)) + 
+  geom_boxplot() + 
+  ggtitle("Boxplot of donations for top candidates during 2008 campaign")
+```
+
+Boxplots show many outliers. McCain has quite a few donors at the 5k+ level.
+Most donations are under 3k, I will further investigate this below.
+
+```{r violin_contributions}
+tmp = data_by_contrib[cand_nm %in% top6, ]
+tmp = tmp[Total_donation > 0] # exclude net negative / disbursements
+
+ggplot(tmp[Total_donation < 3000], aes(x = cand_nm, y = Total_donation)) + 
+  geom_violin() + ylab("Amount of donation ($)") + xlab("Candidate") +
+  ggtitle("Distribution of donations under 3k for top candidates during 2008 campaign")
+```
+
+The violin plot shows an interesting difference in distributions. 
+Donations under 3k are often trimodal: a large number of donations around 2.3k, 
+a large number of donations around 1k 
+and a wider group of donors w/a large tail around 100.
+
+Romney and Giuliani both have a larger proportion of donors over 1.5k.
+Ron Paul and Obama both have more donors who donated less money. 
+For Obama in particular has three large groups of donors who donated under 600.
+
+## Average Donation Size
+
+```{r avg_donation_size}
+tmp = data[cand_nm %in% top6, list(Avg_donation = sum(contb_receipt_amt)/.N), 
+           by = list(cand_nm, Party)]
+ggplot(tmp, aes(x = cand_nm, y = Avg_donation, fill = Party)) + 
+  geom_bar(stat = "identity")
+```
+
+On average, donation sizes for Guiliani and Romney were larger.
+
+```{r avg_donation_size2}
+tmp = data_by_contrib[cand_nm %in% top6, 
+                      list(Avg_donation = sum(Total_donation)/.N), 
+                      by = list(cand_nm, Party)]
+ggplot(tmp, aes(x = cand_nm, y = Avg_donation, fill = Party)) + 
+  geom_bar(stat = "identity")
+```
+
+When we aggregate all donations from the same person (assuming one person 
+ per name per zip), the average donation increase and difference between
+ candidates decrease. 
+This implies that some donors donate very little but multiple times.
+
+```{r avg_donation_size3}
+tmp = data_by_contrib[Total_donation < 2500 & Total_donation > 0 & 
+                        N_donations > 10 & N_donations < 75]
+
+plot_donation_size = function(candidate_name) {
+  ggplot(tmp[cand_nm == candidate_name], aes(x = N_donations, y = Total_donation, 
+                                             color = cand_nm)) + 
+    geom_jitter(alpha = 0.5) + ylim(c(0, 2500)) + xlim(c(10, 75))
+}
+
+plot_donation_size(top6[1])
+plot_donation_size(top6[2])
+plot_donation_size(top6[3])
+plot_donation_size(top6[4])
+plot_donation_size(top6[5])
+plot_donation_size(top6[6])
+```
+
+A large number of individuals donated over 10 times to Obama while
+ only 1 person donated for Giuliani. 
+I made the axis the same to make it easier to compare between the different 
+candidates, however, limiting to 75 donations trunates Obama's dataset.
+
+```{r avg_donation_size4}
+data_by_contrib[N_donations > 75][order(N_donations, decreasing = T)]
+```
+Suprisingly, 3 people donated over 100 times to Obama's campaign!
+
+
+# Final Plots and Summary
+
+### Plot One
+```{r final_primary_time, ref.label='donationtime', echo=FALSE}
+```
+
+### Description One
+Plotting donations wihtin 2 years of the election date, cumulative donations 
+ can be relatively close during the primary but the eventual candidates raise
+ the most money in the end.
+ 
+At the beginning of January, 2008 the funding totals were
+```{r final_jan_donors}
+data[cand_nm %in% top6 & contb_receipt_dt < "2008-01-01", 
+           list(Total = sum(contb_receipt_amt)),
+           by = list(cand_nm)][order(cand_nm)]
+```
+
+Suprisingly, the candidates who won the primary did not have the most money 
+ raised at this point. Additional donations often stop (plateaus in chart)
+ when each of the candidates drop out (date below). The drops in donations
+ correspond to donors requesting refund.
+
+- Hillary Clinton withdrew on June 7, 2008 
+- Rudy Giuliani withdrew on January 30, 2008
+- McCain, John S won primary (republican)
+- Obama, Barack won primary (democrat)
+- Ron Paul withdrew on June 12, 2008
+- Mitt Romney withdrew on February 7, 2008 
+
+```{r final_jan_party}
+data[contb_receipt_dt < "2008-01-01", 
+           list(Total = sum(contb_receipt_amt)),
+           by = list(Party)]
+```
+
+By the end of the election, democrats had raised more money than republicans.
+However, at the beginning of January 2008 even though Hillary (a democrat) was
+leading (see numbers above), republicans had raised more money overall. The 
+money raised by republicans was spread over more candidates.
+
+### Plot Two
+```{r final_violin, ref.label='violin_contributions', echo=FALSE}
+```
+
+### Description Two
+This violin plot shows a lot of information on what the donation size 
+ distributions for each of the candidates. I summarize all the donations from 
+ an individual (assuming only one donor with same name, location and occupation), 
+ remove negative values and plot donation amount from that donor. From this 
+ plot, one could make inferences about the net worth of the donors (based 
+ on how much they are able to donate).
+
+```{r final_violin2}
+ggplot(data_by_contrib[cand_nm %in% top6 & Total_donation > 0], 
+       aes(x = cand_nm, y = Total_donation)) + 
+  geom_violin() + ylab("Amount of donation ($)") + xlab("Candidate") +
+  ggtitle("Distribution of donations for top candidates during 2008 campaign")
+```
+
+Removing the restriction of total donation under 3000 magnifies the differences
+ between the candidates' donor bases. Obama and Ron Paul's donor base often 
+ donate smaller amounts. Romney and Giuliani's donor base on the other hand 
+ donate much more.
+
+```{r small_donations}
+data_by_contrib[cand_nm %in% top6 & Total_donation > 0,
+                list(Fraction_under_100 = sum(Total_donation < 100) / .N),
+                by = list(cand_nm)]
+data_by_contrib[cand_nm %in% top6 & Total_donation > 0,
+                list(Fraction_over_1000 = sum(Total_donation > 1000) / .N),
+                by = list(cand_nm)]
+```
+
+The summarized data above quantifies the difference in donor base. Almost half 
+ of Romney and Giuliani's donors donate over $1000 while under 3% donate under 
+ $100. In contrast, 17% of Obama's donors donate under $100. 
+
+### Plot Three
+```{r final_city_map_election, echo=FALSE}
+# for some reason ref.labels would not plot so copy/paste from above
+tmp = data[cand_nm %in% top6[1:2] & election_tp == "G2008", 
+           list(Total = sum(contb_receipt_amt), city_lookup = 
+                  paste(contbr_city, "FL", sep=",")), 
+           by = list(contbr_city, cand_nm)][order(Total, decreasing=T)]
+obama_vs_mccain = rbind(head(tmp[cand_nm == top6[1]], 10), 
+                        head(tmp[cand_nm == top6[2]], 10))
+ggmap(get_map(location = c(lon = -83.2, lat = 28.1), zoom = 7)) +
+  geom_point(data = merge(obama_vs_mccain, city_lookup, by="city_lookup"), 
+             alpha = 0.7, aes(x=lon, y=lat, size=Total, color = cand_nm)) +
+  scale_size_area(max_size = 10) +
+  labs(size = "Donation amount", color = "Candidate Name") +
+  ggtitle("Top 10 cities for donations during general election")
+```
+
+### Description Three
+I chose this plot because it shows the geospatial location of cities that
+ supported each candidate. Most cities supported both candidates with more
+ money going to Obama than McCain. Cities around Miami are the source of 
+ most donation donations. The donations plotted are only for general election.
+ 
+```{r final_city_map_total}
+obama_vs_mccain[order(c(seq(1,20, 2), seq(2, 20, 2))), -1, with=FALSE]
+```
+
+This list of top 10 cities that raised money for Obama and McCain show that
+ while many of the cities overlap, the amount raised differ dramatically.
+
+```{r final_city_map_proportion}
+tmp = data[cand_nm %in% top6[1:2] & election_tp == "G2008", 
+           list(Total = sum(contb_receipt_amt)), 
+           by = list(cand_nm)][order(Total, decreasing=T)]
+tmp
+
+tmp2 = obama_vs_mccain[order(c(seq(1,20, 2), seq(2, 20, 2))), -1, with=FALSE]
+tmp2[, Overall := rep(tmp$Total, 5)]
+tmp2[, Pct := Total / Overall * 100]
+tmp2[, list(cand_nm, Pct, city_lookup)]
+```
+Since the amounts raised by the two candidates differed so much, I also looked
+ into the percent of donations that came from each city. The above table shows
+ that Miami contributed contributed quite a large amount of Obama's total 
+ donations (about 10%) while McCain's largest city (Naples, FL - one of the
+ wealthiest cities in the US) contributed only about 6% of McCain's total.
+ About 42% of Obama's donations for general election came from the top 10 cities
+ while 41% of McCain's donations for general election came from the top 10 cities.
+
+# Reflection
+
+```{r cleanup, echo=FALSE}
+rm(data_orig)
+invisible(gc())
+```
+
+Some of my early struggles when analyzing this dataset had to do with cleaning
+ up the data and understanding why donations could be negative. I also spent
+ a while trying to figure out the right comparisons, plotting all presidential
+ candidates would make the plots look too complicated so I focused on the top
+ 6 candidates (2 democrats, 4 republicans).
+
+By focusing on the top candidates, the plots were easier to understand. I also
+ spent a while figuring out the libraries to visualize geographically where the
+ zip code boundaries and cities were. When I got them working I felt like it
+ was much more meaningful than just listing zip codes without context.
+
+Some future work that could be done with this dataset is to compare donor zip
+ code to census estimates for population, income and racial breakdown for each
+ zip code. One could also clean up the occupation column and instead use
+ controlled vocabulary instead of free text. Another interesting dataset to
+ overlay would be how many times a candidate visited a city and compare it to
+ rate of donations coming in from that area along with the eventual vote results
+ from election.

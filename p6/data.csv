@@ -1,0 +1,19 @@
+"ListingCategory","LowIncome <$25k","MiddleIncome","HighIncome >$75k","Total"
+"Student Use",0.354,0.529,0.117,274
+"Cosmetic Procedure",0.11,0.703,0.187,91
+"Auto",0.132,0.666,0.202,2237
+"Motorcycle",0.125,0.635,0.24,304
+"Household Expenses",0.111,0.6,0.289,1996
+"Vacation",0.087,0.607,0.306,768
+"Medical/Dental",0.072,0.608,0.32,1522
+"RV",0.115,0.558,0.327,52
+"Wedding Loans",0.057,0.607,0.336,771
+"Green Loans",0.119,0.542,0.339,59
+"Debt Consolidation",0.049,0.593,0.358,53180
+"Business",0.08,0.547,0.373,5298
+"Large Purchases",0.071,0.551,0.378,876
+"Boat",0.082,0.529,0.389,85
+"Engagement Ring",0.051,0.558,0.391,217
+"Baby&Adoption",0.03,0.568,0.402,199
+"Home Improvement",0.043,0.54,0.417,6801
+"Taxes",0.045,0.467,0.488,885

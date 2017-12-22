@@ -1,0 +1,6 @@
+http://docs.ggplot2.org/current/
+https://www.rstudio.com/wp-content/uploads/2015/03/ggplot2-cheatsheet.pdf
+https://rpubs.com/arilamstein/zip-vignette-1
+https://cran.r-project.org/web/packages/choroplethr/index.html
+http://bcb.dfci.harvard.edu/~aedin/courses/R/CDC/maps.html
+http://yihui.name/knitr/

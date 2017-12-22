@@ -1,0 +1,182 @@
+# P6: Exploring Prosper Loan Dataset
+Author: Ying Wu
+
+# Introduction
+Prosper is a company that offers a marketplace for peer to peer lending.
+Individuals can request loans and Prosper will calculate a score value
+indicating the risk of the loan the individual is asking for and then 
+add that loan into their system. Investors can choose the type of loans 
+that they would want to get exposure to allowing them to trade off risk 
+for return.
+
+My goal is to pick out an interesting facet of this loan data and explore
+it further using a d3.js visualization.
+
+# Exploration
+
+Looking through the variable definitions, I was most intrigued by the categories.
+I exploring the relationship between these categories and the rest of the 
+variables available in the Prosper loan data.
+
+```{r readin}
+library(data.table)
+library(ggplot2)
+# dt = fread("prosperLoanData.csv") # everything is character
+df = read.table("prosperLoanData.csv", header=T, sep=",")
+dt = as.data.table(df)
+rm(df)
+
+dt$ListingNumber = as.factor(dt$ListingNumber)
+dt$ListingCreationDate = as.POSIXct(dt$ListingCreationDate)
+dt$Term = as.factor(dt$Term)
+dt$ClosedDate = as.Date(dt$ClosedDate)
+dt$ListingCategory..numeric. = factor(dt$ListingCategory..numeric.)
+levels(dt$ListingCategory..numeric.) = c(NA, "Debt Consolidation", "Home Improvement", "Business", "Personal Loan", 
+  "Student Use", "Auto", "Other", "Baby&Adoption", "Boat", "Cosmetic Procedure",
+  "Engagement Ring", "Green Loans", "Household Expenses", "Large Purchases",
+  "Medical/Dental", "Motorcycle", "RV", "Taxes", "Vacation", "Wedding Loans")
+dt$DateCreditPulled = as.POSIXct(dt$DateCreditPulled)
+dt$FirstRecordedCreditLine = as.Date(dt$FirstRecordedCreditLine)
+dt$LoanOriginationDate = as.Date(dt$LoanOriginationDate)
+
+dt$IncomeRange = ordered(dt$IncomeRange, levels(dt$IncomeRange)[c(8, 1, 3, 4, 5, 6, 2, 7)])
+
+summary(dt)
+```
+
+Some data summaries and reading online reveals that Prosper changed their API in
+the latter half of 2009. In order to have the most consistant dataset, I exclude
+data from before this period. I believe the most interesting comparison with 
+ListingCategory is the IncomeRange of the inviduals asking for the loan
+
+```{r summary1}
+table(dt[ListingCreationDate > "2009-07-01"]$ListingCategory..numeric., dt[ListingCreationDate > "2009-07-01"]$IncomeRange)
+
+ggplot(dt[ListingCreationDate > "2009-07-01"], aes(ListingCategory..numeric., fill = IncomeRange)) + geom_bar() + coord_flip()
+
+setnames(dt, "ListingCategory..numeric.", "ListingCategory")
+```
+
+merge income ranges and summarize
+```{r summary2}
+tmp = dt[ListingCreationDate > "2009-07-01", list(Total = .N), by = list(ListingCategory, IncomeRange)]
+out = dcast(tmp, ListingCategory ~ IncomeRange, value.var = "Total", fill = 0)
+out$LowIncome = out$"Not employed" + out$"$0" + out$"$1-24,999"
+out$MiddleIncome = out$"$25,000-49,999" + out$"$50,000-74,999"
+out$HighIncome = out$"$75,000-99,999" + out$"$100,000+"
+out[, Total := LowIncome + MiddleIncome + HighIncome]
+out[, LowIncomePct := round(LowIncome / Total, 3)]
+out[, MiddleIncomePct := round(MiddleIncome / Total, 3)]
+out[, HighIncomePct := 1 - MiddleIncomePct - LowIncomePct] # so all sum to 1
+out = out[ListingCategory != "Other"] # remove NA and "Other" since uninformative
+setorder(out, HighIncomePct)
+out$ListingCategory = factor(out$ListingCategory, levels = as.character(out$ListingCategory)) # reorder
+
+ggplot(melt(out, id.vars = "ListingCategory", measure.vars = c("LowIncomePct", "MiddleIncomePct", "HighIncomePct")), 
+	aes(ListingCategory, value, fill = variable)) + geom_bar(stat = 'identity') + coord_flip()
+```
+
+write out the data
+```{r output, eval = FALSE}
+
+# cleanup
+out = out[, .(ListingCategory, LowIncomePct, MiddleIncomePct, HighIncomePct, Total)]
+setnames(out, c("ListingCategory", "LowIncome <$25k", "MiddleIncome", "HighIncome >$75k", "Total"))
+write.csv(out, file = "data.csv", row.names = FALSE)
+```
+
+# Summary
+Thinking from a perspective of an affliate advertiser, my goal is to identify 
+target audiences that might be interested in lending using Prosper based off
+historical loan data. To achieve this, I identified two interesting variables
+in the Prosper dataset: ListingCategory and IncomeRange. The former provides
+good sites to place ads for Prosper whereas the latter can be used to filter
+the customers to target these advertisements for.
+
+Based on the data, I found that the following class of individuals 
+would be a good target for Prosper ads:
+- Low income students
+- Middle income looking for cosmetic procedures
+- High income in months before taxes being due
+
+These three categories are specific to each income category. Sorting by
+high income: Taxes have the highest percentage while Cosmetic Procedure
+and Student Use are the lowest. Sorting by middle income: Cosmetic Procedure
+had the highest percentage while Student Use and Taxes were the lowest.
+Sorting by low income: Student Use by far had the highest percentage
+with Taxes near the bottom and Cosmetic Procedure in the middle.
+
+# Design
+I used a proportional stacked bar chart to show the number of loans for a 
+given category and IncomeRange. The IncomeRange is encoded using different 
+colors in a gradient to show the ordinal nature of this variable.
+
+For interactive component, I added in a mouseover tooltip on the Y-axis to 
+allow the user to see how many elements there were total. In addition, another
+mouseover showed the percentage of every income class.
+
+After collecting feedback on the initial version, I realized that I needed a
+better mechanism to emphasize the differences between the income classes. I added
+a dropdown menu to sort by different income classes to emphasize the differences
+between income classes. Additionally, I bolded the categories of interest and
+I sorted by Low income by default since "Student Use" had the most striking 
+example of percentage overrepresentation by income class.
+
+# Feedback
+
+I asked the following questions and wrote down the respones below:
+
+- What do you notice in the visualization?
+- What questions do you have about the data?
+- What relationships do you notice?
+- What do you think is the main takeaway from this visualization?
+- Is there something you don’t understand in the graphic?
+
+## Feedback 1 - Lynn
+
+Poor students are one of the highest proportions.
+
+Could you sort by the other income classes too (low and middle)?
+
+Middle income seems to dominate Cosmetic Procedure and transportation related
+(Auto and Motorcycle).
+
+Poor students would be a good target for Prosper advertisements.
+
+I understand the graphic.
+
+## Feedback 2 - Jamie
+Middle income has the largest % of loans
+
+Could you also show the dollar amount of each loan?
+
+Low income have disporportionately high student loans
+
+I understand the graphic.
+
+## Feedback 3 - Jo
+
+The difference between what poor people ask for loans on and what rich people
+ask for loans on is quite big.
+
+Could you sort by low income instead of high?
+
+Why students getting loans from Prosper rather than regular student loans.
+
+Low income is more likely to use prosper for student loans. Middle income for 
+status symbol items like beauty, and cars. High income for home improvement or taxes.
+
+I understand the graphic. 
+
+# Resources
+https://developers.prosper.com/docs/investor/loans-api/
+
+http://square.github.io/intro-to-d3/
+
+https://github.com/d3/d3/wiki/
+
+https://bl.ocks.org/mbostock/3886208 
+
+https://github.com/d3/d3/blob/master/API.md
+
+various stackoverflow and plnkr/jsfiddle/bl.ocks examples

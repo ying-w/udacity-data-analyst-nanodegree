@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+.bar {
+  fill: steelblue;
+}
+
+.axis path {
+  display: none;
+}
+
+.tooltipy {
+  position: absolute;
+  text-align: left;
+  width: 110px;
+  height: 15px;
+  padding: 2px;
+  font: 12px sans-serif;
+  background: lightsteelblue;
+  border: 0px;
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+</style>
+
+<h1 style="text-align:center;">Top Prosper loan categories by income</h1>
+
+<svg width="960" height="500"></svg>
+<script src="http://d3js.org/d3.v4.min.js"></script>
+<script>
+
+var svg = d3.select("svg"),
+    margin = {top: 20, right: 20, bottom: 30, left: 140},
+    width = +svg.attr("width") - margin.left - margin.right,
+    height = +svg.attr("height") - margin.top - margin.bottom -3,
+    g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+// vertical scale, loan categories
+var y = d3.scaleBand()
+    .rangeRound([0, height])
+    .padding(0.1)
+    .align(0.1);
+
+// horizontal scale, number of loans
+var x = d3.scaleLinear()
+    .rangeRound([0, width-120]);
+
+// colors
+var z = d3.scaleOrdinal()
+    .range(["#98abc5", "#8a89a6", "#7b6888", "#6b486b", "#a05d56", "#d0743c", "#ff8c00"]);
+
+var stack = d3.stack();
+
+d3.csv("data.csv", type, function(error, data) {
+  if (error) throw error;
+
+  data.columns = data.columns.filter(function(d) { return d != "Total"; })
+  data.sort(function(a, b) { return b["LowIncome <$25k"] - a["LowIncome <$25k"]; });
+
+  y.domain(data.map(function(d) { return d.ListingCategory; }));
+  x.domain([0, 100]).nice();
+  z.domain(data.columns.slice(1));
+  
+  // define tooltip and mouseover interaction      
+  tooltip = d3.select("body")
+           .append("div")
+           .attr("class", "tooltip")
+           .style("position", "absolute")
+           .style("z-index", "10")
+           .style("visibility", "hidden")
+           .text("a simple tooltip");
+		   
+  // add rectangles from stack
+  g.selectAll(".serie")
+    .data(stack.keys(data.columns.slice(1))(data)) // original columns
+    .enter().append("g")
+      .attr("class", "serie")
+      .attr("fill", function(d) { return z(d.key); })
+    .selectAll("rect")
+    .data(function(d) { return d; })
+    .enter().append("rect")
+      .attr("y", function(d) { return y(d.data.ListingCategory); })
+      .attr("x", function(d) { return x(d[0]); })
+      .attr("width", function(d) { return x(d[1]) - x(d[0]); })
+      .attr("height", y.bandwidth())
+      .on("mouseover", function() { tooltip.style("display", null); })
+      .on("mouseout", function() { tooltip.style("display", "none"); })
+      .on("mousemove", function(d) {
+        var xPosition = d3.event.pageX;
+        var yPosition = d3.event.pageY - 100;
+        tooltip.attr("transform", "translate(" + xPosition + "," + yPosition + ")");
+        tooltip.select("text").text(+(Math.round(10*(d[1] - d[0]))/10));
+      });
+
+  // x axis
+  g.append("g")
+      .attr("class", "axis axis--x")
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(x))
+    .append("text")
+      .attr("x", width/2)
+      .attr("y", margin.bottom)
+      .attr("fill", "#000")
+      .text("% of Loans");
+
+  // y axis
+  g.append("g")
+      .attr("class", "axis axis--y")
+      .call(d3.axisLeft(y).ticks(10, "s"))
+	.append("text")
+	  .attr("x",0)
+	  .attr("y", margin.top - 30)
+	  .attr("fill", "#000")
+	  .text("Mouse over category for total");
+
+  // legend
+  var legend = g.selectAll(".legend")
+    .data(data.columns.slice(1).reverse())
+    .enter().append("g")
+      .attr("class", "legend")
+      .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; })
+      .style("font", "10px sans-serif");
+
+  legend.append("rect")
+      .attr("x", width - 18)
+      .attr("y", 50-9)
+      .attr("width", 18)
+      .attr("height", 18)
+      .attr("fill", z);
+
+  legend.append("text")
+      .attr("x", width - 24)
+      .attr("y", 50)
+      .attr("dy", ".35em")
+      .attr("text-anchor", "end")
+      .text(function(d) { return d; });      
+
+  d3.selectAll(".axis--y text")
+            .on("mouseover", function (d2) {
+                var text = data.filter(function(d) 
+                    { return d.ListingCategory === d2 } ).map(function(d) 
+                    { return d.Total });
+                tooltipy.style("top", (d3.event.pageY - 10) + "px").style("left", (d3.event.pageX + 15) + "px");
+                tooltipy.style("visibility", "visible");
+                tooltipy.text("# of loans: " + text);
+            })
+            .on("mouseout", function () {
+                tooltipy.style("visibility", "hidden");
+  });
+  
+  // have two types of tooltips, one for y-axis one for bar
+  var tooltipy = d3.select("body")
+           .append("div")
+           .attr("class", "tooltipy")
+           .style("position", "absolute")
+           .style("z-index", "10")
+           .style("visibility", "hidden")
+           .text("a simple tooltip");
+  
+  var tooltip = svg.append("g")
+    .attr("class", "tooltip")
+    .style("display", "none");
+    
+  tooltip.append("rect")
+    .attr("width", 30)
+    .attr("height", 20)
+    .attr("fill", "white")
+    .style("opacity", 0.5);
+
+  tooltip.append("text")
+    .attr("x", 15)
+    .attr("dy", "1.2em")
+    .style("text-anchor", "middle")
+    .attr("font-size", "12px")
+    .attr("font-weight", "bold");
+
+  svg.selectAll(".axis--y text")
+	.filter( function(d) { return d == "Taxes" || d == "Student Use" 
+							|| d == "Cosmetic Procedure"; })
+	.attr("font-weight", "bold")
+	.attr("font-size", "12px");
+  
+  // sort based on variable from drop down menu
+  var old_order = data.map(function(d) { return d.ListingCategory; });
+  d3.select("#opts").on("change", function() {
+    change(d3.select(this).property('value')) });
+
+  function change(sort_value) {
+  
+    if(sort_value === "high") {
+	  var sort_var = "HighIncome >$75k";
+    } else if (sort_value === "middle") {
+      var sort_var = "MiddleIncome";
+    } else if (sort_value === "low") {
+      var sort_var = "LowIncome <$25k";
+    }
+    
+    var new_order = data.sort(function(a, b) { return b[sort_var] - a[sort_var]; }).map(function(d) { return d.ListingCategory; });
+
+    svg.selectAll(".serie").selectAll("rect").transition()
+      .duration(1000)
+      .attr("transform", function(d, i) { 
+      return "translate(0, " + (y(old_order[new_order.indexOf(old_order[i])]) - y(old_order[i])) + ")"; 
+      });
+      
+    svg.selectAll(".axis.axis--y").selectAll("text").transition()
+      .duration(1000)
+      .attr("transform", function(d, i) { 
+      return "translate(0, " + (y(old_order[new_order.indexOf(old_order[i])]) - y(old_order[i])) + ")"; 
+      });      
+  };
+  
+});
+
+// read in function
+function type(d, i, columns) {
+  for (i = 1, t = 0; i < columns.length; ++i) {
+    d[columns[i]] = +d[columns[i]] * 100; //convert to numeric pct 
+  }
+  return d;
+}
+
+</script>
+
+<html>
+  <head>
+    <title>P6 Analyzing Prosper Data</title>
+  </head>
+  <body>
+    <select id = "opts">
+    <option value="low" selected="selected">SortBy: Low Income</option>
+    <option value="middle">Middle Income</option> 
+    <option value="high">High Income</option>
+  </select>
+  </body>
+</html>
+
+    
+

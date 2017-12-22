@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+<title>P6: Exploring Prosper Loan Dataset</title>
+
+<script type="text/javascript">
+window.onload = function() {
+  var imgs = document.getElementsByTagName('img'), i, img;
+  for (i = 0; i < imgs.length; i++) {
+    img = imgs[i];
+    // center an image if it is the only element of its parent
+    if (img.parentElement.childElementCount === 1)
+      img.parentElement.style.textAlign = 'center';
+  }
+};
+</script>
+
+<!-- Styles for R syntax highlighter -->
+<style type="text/css">
+   pre .operator,
+   pre .paren {
+     color: rgb(104, 118, 135)
+   }
+
+   pre .literal {
+     color: #990073
+   }
+
+   pre .number {
+     color: #099;
+   }
+
+   pre .comment {
+     color: #998;
+     font-style: italic
+   }
+
+   pre .keyword {
+     color: #900;
+     font-weight: bold
+   }
+
+   pre .identifier {
+     color: rgb(0, 0, 0);
+   }
+
+   pre .string {
+     color: #d14;
+   }
+</style>
+
+<!-- R syntax highlighter -->
+<script type="text/javascript">
+var hljs=new function(){function m(p){return p.replace(/&/gm,"&amp;").replace(/</gm,"&lt;")}function f(r,q,p){return RegExp(q,"m"+(r.cI?"i":"")+(p?"g":""))}function b(r){for(var p=0;p<r.childNodes.length;p++){var q=r.childNodes[p];if(q.nodeName=="CODE"){return q}if(!(q.nodeType==3&&q.nodeValue.match(/\s+/))){break}}}function h(t,s){var p="";for(var r=0;r<t.childNodes.length;r++){if(t.childNodes[r].nodeType==3){var q=t.childNodes[r].nodeValue;if(s){q=q.replace(/\n/g,"")}p+=q}else{if(t.childNodes[r].nodeName=="BR"){p+="\n"}else{p+=h(t.childNodes[r])}}}if(/MSIE [678]/.test(navigator.userAgent)){p=p.replace(/\r/g,"\n")}return p}function a(s){var r=s.className.split(/\s+/);r=r.concat(s.parentNode.className.split(/\s+/));for(var q=0;q<r.length;q++){var p=r[q].replace(/^language-/,"");if(e[p]){return p}}}function c(q){var p=[];(function(s,t){for(var r=0;r<s.childNodes.length;r++){if(s.childNodes[r].nodeType==3){t+=s.childNodes[r].nodeValue.length}else{if(s.childNodes[r].nodeName=="BR"){t+=1}else{if(s.childNodes[r].nodeType==1){p.push({event:"start",offset:t,node:s.childNodes[r]});t=arguments.callee(s.childNodes[r],t);p.push({event:"stop",offset:t,node:s.childNodes[r]})}}}}return t})(q,0);return p}function k(y,w,x){var q=0;var z="";var s=[];function u(){if(y.length&&w.length){if(y[0].offset!=w[0].offset){return(y[0].offset<w[0].offset)?y:w}else{return w[0].event=="start"?y:w}}else{return y.length?y:w}}function t(D){var A="<"+D.nodeName.toLowerCase();for(var B=0;B<D.attributes.length;B++){var C=D.attributes[B];A+=" "+C.nodeName.toLowerCase();if(C.value!==undefined&&C.value!==false&&C.value!==null){A+='="'+m(C.value)+'"'}}return A+">"}while(y.length||w.length){var v=u().splice(0,1)[0];z+=m(x.substr(q,v.offset-q));q=v.offset;if(v.event=="start"){z+=t(v.node);s.push(v.node)}else{if(v.event=="stop"){var p,r=s.length;do{r--;p=s[r];z+=("</"+p.nodeName.toLowerCase()+">")}while(p!=v.node);s.splice(r,1);while(r<s.length){z+=t(s[r]);r++}}}}return z+m(x.substr(q))}function j(){function q(x,y,v){if(x.compiled){return}var u;var s=[];if(x.k){x.lR=f(y,x.l||hljs.IR,true);for(var w in x.k){if(!x.k.hasOwnProperty(w)){continue}if(x.k[w] instanceof Object){u=x.k[w]}else{u=x.k;w="keyword"}for(var r in u){if(!u.hasOwnProperty(r)){continue}x.k[r]=[w,u[r]];s.push(r)}}}if(!v){if(x.bWK){x.b="\\b("+s.join("|")+")\\s"}x.bR=f(y,x.b?x.b:"\\B|\\b");if(!x.e&&!x.eW){x.e="\\B|\\b"}if(x.e){x.eR=f(y,x.e)}}if(x.i){x.iR=f(y,x.i)}if(x.r===undefined){x.r=1}if(!x.c){x.c=[]}x.compiled=true;for(var t=0;t<x.c.length;t++){if(x.c[t]=="self"){x.c[t]=x}q(x.c[t],y,false)}if(x.starts){q(x.starts,y,false)}}for(var p in e){if(!e.hasOwnProperty(p)){continue}q(e[p].dM,e[p],true)}}function d(B,C){if(!j.called){j();j.called=true}function q(r,M){for(var L=0;L<M.c.length;L++){if((M.c[L].bR.exec(r)||[null])[0]==r){return M.c[L]}}}function v(L,r){if(D[L].e&&D[L].eR.test(r)){return 1}if(D[L].eW){var M=v(L-1,r);return M?M+1:0}return 0}function w(r,L){return L.i&&L.iR.test(r)}function K(N,O){var M=[];for(var L=0;L<N.c.length;L++){M.push(N.c[L].b)}var r=D.length-1;do{if(D[r].e){M.push(D[r].e)}r--}while(D[r+1].eW);if(N.i){M.push(N.i)}return f(O,M.join("|"),true)}function p(M,L){var N=D[D.length-1];if(!N.t){N.t=K(N,E)}N.t.lastIndex=L;var r=N.t.exec(M);return r?[M.substr(L,r.index-L),r[0],false]:[M.substr(L),"",true]}function z(N,r){var L=E.cI?r[0].toLowerCase():r[0];var M=N.k[L];if(M&&M instanceof Array){return M}return false}function F(L,P){L=m(L);if(!P.k){return L}var r="";var O=0;P.lR.lastIndex=0;var M=P.lR.exec(L);while(M){r+=L.substr(O,M.index-O);var N=z(P,M);if(N){x+=N[1];r+='<span class="'+N[0]+'">'+M[0]+"</span>"}else{r+=M[0]}O=P.lR.lastIndex;M=P.lR.exec(L)}return r+L.substr(O,L.length-O)}function J(L,M){if(M.sL&&e[M.sL]){var r=d(M.sL,L);x+=r.keyword_count;return r.value}else{return F(L,M)}}function I(M,r){var L=M.cN?'<span class="'+M.cN+'">':"";if(M.rB){y+=L;M.buffer=""}else{if(M.eB){y+=m(r)+L;M.buffer=""}else{y+=L;M.buffer=r}}D.push(M);A+=M.r}function G(N,M,Q){var R=D[D.length-1];if(Q){y+=J(R.buffer+N,R);return false}var P=q(M,R);if(P){y+=J(R.buffer+N,R);I(P,M);return P.rB}var L=v(D.length-1,M);if(L){var O=R.cN?"</span>":"";if(R.rE){y+=J(R.buffer+N,R)+O}else{if(R.eE){y+=J(R.buffer+N,R)+O+m(M)}else{y+=J(R.buffer+N+M,R)+O}}while(L>1){O=D[D.length-2].cN?"</span>":"";y+=O;L--;D.length--}var r=D[D.length-1];D.length--;D[D.length-1].buffer="";if(r.starts){I(r.starts,"")}return R.rE}if(w(M,R)){throw"Illegal"}}var E=e[B];var D=[E.dM];var A=0;var x=0;var y="";try{var s,u=0;E.dM.buffer="";do{s=p(C,u);var t=G(s[0],s[1],s[2]);u+=s[0].length;if(!t){u+=s[1].length}}while(!s[2]);if(D.length>1){throw"Illegal"}return{r:A,keyword_count:x,value:y}}catch(H){if(H=="Illegal"){return{r:0,keyword_count:0,value:m(C)}}else{throw H}}}function g(t){var p={keyword_count:0,r:0,value:m(t)};var r=p;for(var q in e){if(!e.hasOwnProperty(q)){continue}var s=d(q,t);s.language=q;if(s.keyword_count+s.r>r.keyword_count+r.r){r=s}if(s.keyword_count+s.r>p.keyword_count+p.r){r=p;p=s}}if(r.language){p.second_best=r}return p}function i(r,q,p){if(q){r=r.replace(/^((<[^>]+>|\t)+)/gm,function(t,w,v,u){return w.replace(/\t/g,q)})}if(p){r=r.replace(/\n/g,"<br>")}return r}function n(t,w,r){var x=h(t,r);var v=a(t);var y,s;if(v){y=d(v,x)}else{return}var q=c(t);if(q.length){s=document.createElement("pre");s.innerHTML=y.value;y.value=k(q,c(s),x)}y.value=i(y.value,w,r);var u=t.className;if(!u.match("(\\s|^)(language-)?"+v+"(\\s|$)")){u=u?(u+" "+v):v}if(/MSIE [678]/.test(navigator.userAgent)&&t.tagName=="CODE"&&t.parentNode.tagName=="PRE"){s=t.parentNode;var p=document.createElement("div");p.innerHTML="<pre><code>"+y.value+"</code></pre>";t=p.firstChild.firstChild;p.firstChild.cN=s.cN;s.parentNode.replaceChild(p.firstChild,s)}else{t.innerHTML=y.value}t.className=u;t.result={language:v,kw:y.keyword_count,re:y.r};if(y.second_best){t.second_best={language:y.second_best.language,kw:y.second_best.keyword_count,re:y.second_best.r}}}function o(){if(o.called){return}o.called=true;var r=document.getElementsByTagName("pre");for(var p=0;p<r.length;p++){var q=b(r[p]);if(q){n(q,hljs.tabReplace)}}}function l(){if(window.addEventListener){window.addEventListener("DOMContentLoaded",o,false);window.addEventListener("load",o,false)}else{if(window.attachEvent){window.attachEvent("onload",o)}else{window.onload=o}}}var e={};this.LANGUAGES=e;this.highlight=d;this.highlightAuto=g;this.fixMarkup=i;this.highlightBlock=n;this.initHighlighting=o;this.initHighlightingOnLoad=l;this.IR="[a-zA-Z][a-zA-Z0-9_]*";this.UIR="[a-zA-Z_][a-zA-Z0-9_]*";this.NR="\\b\\d+(\\.\\d+)?";this.CNR="\\b(0[xX][a-fA-F0-9]+|(\\d+(\\.\\d*)?|\\.\\d+)([eE][-+]?\\d+)?)";this.BNR="\\b(0b[01]+)";this.RSR="!|!=|!==|%|%=|&|&&|&=|\\*|\\*=|\\+|\\+=|,|\\.|-|-=|/|/=|:|;|<|<<|<<=|<=|=|==|===|>|>=|>>|>>=|>>>|>>>=|\\?|\\[|\\{|\\(|\\^|\\^=|\\||\\|=|\\|\\||~";this.ER="(?![\\s\\S])";this.BE={b:"\\\\.",r:0};this.ASM={cN:"string",b:"'",e:"'",i:"\\n",c:[this.BE],r:0};this.QSM={cN:"string",b:'"',e:'"',i:"\\n",c:[this.BE],r:0};this.CLCM={cN:"comment",b:"//",e:"$"};this.CBLCLM={cN:"comment",b:"/\\*",e:"\\*/"};this.HCM={cN:"comment",b:"#",e:"$"};this.NM={cN:"number",b:this.NR,r:0};this.CNM={cN:"number",b:this.CNR,r:0};this.BNM={cN:"number",b:this.BNR,r:0};this.inherit=function(r,s){var p={};for(var q in r){p[q]=r[q]}if(s){for(var q in s){p[q]=s[q]}}return p}}();hljs.LANGUAGES.cpp=function(){var a={keyword:{"false":1,"int":1,"float":1,"while":1,"private":1,"char":1,"catch":1,"export":1,virtual:1,operator:2,sizeof:2,dynamic_cast:2,typedef:2,const_cast:2,"const":1,struct:1,"for":1,static_cast:2,union:1,namespace:1,unsigned:1,"long":1,"throw":1,"volatile":2,"static":1,"protected":1,bool:1,template:1,mutable:1,"if":1,"public":1,friend:2,"do":1,"return":1,"goto":1,auto:1,"void":2,"enum":1,"else":1,"break":1,"new":1,extern:1,using:1,"true":1,"class":1,asm:1,"case":1,typeid:1,"short":1,reinterpret_cast:2,"default":1,"double":1,register:1,explicit:1,signed:1,typename:1,"try":1,"this":1,"switch":1,"continue":1,wchar_t:1,inline:1,"delete":1,alignof:1,char16_t:1,char32_t:1,constexpr:1,decltype:1,noexcept:1,nullptr:1,static_assert:1,thread_local:1,restrict:1,_Bool:1,complex:1},built_in:{std:1,string:1,cin:1,cout:1,cerr:1,clog:1,stringstream:1,istringstream:1,ostringstream:1,auto_ptr:1,deque:1,list:1,queue:1,stack:1,vector:1,map:1,set:1,bitset:1,multiset:1,multimap:1,unordered_set:1,unordered_map:1,unordered_multiset:1,unordered_multimap:1,array:1,shared_ptr:1}};return{dM:{k:a,i:"</",c:[hljs.CLCM,hljs.CBLCLM,hljs.QSM,{cN:"string",b:"'\\\\?.",e:"'",i:"."},{cN:"number",b:"\\b(\\d+(\\.\\d*)?|\\.\\d+)(u|U|l|L|ul|UL|f|F)"},hljs.CNM,{cN:"preprocessor",b:"#",e:"$"},{cN:"stl_container",b:"\\b(deque|list|queue|stack|vector|map|set|bitset|multiset|multimap|unordered_map|unordered_set|unordered_multiset|unordered_multimap|array)\\s*<",e:">",k:a,r:10,c:["self"]}]}}}();hljs.LANGUAGES.r={dM:{c:[hljs.HCM,{cN:"number",b:"\\b0[xX][0-9a-fA-F]+[Li]?\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"number",b:"\\b\\d+(?:[eE][+\\-]?\\d*)?L\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"number",b:"\\b\\d+\\.(?!\\d)(?:i\\b)?",e:hljs.IMMEDIATE_RE,r:1},{cN:"number",b:"\\b\\d+(?:\\.\\d*)?(?:[eE][+\\-]?\\d*)?i?\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"number",b:"\\.\\d+(?:[eE][+\\-]?\\d*)?i?\\b",e:hljs.IMMEDIATE_RE,r:1},{cN:"keyword",b:"(?:tryCatch|library|setGeneric|setGroupGeneric)\\b",e:hljs.IMMEDIATE_RE,r:10},{cN:"keyword",b:"\\.\\.\\.",e:hljs.IMMEDIATE_RE,r:10},{cN:"keyword",b:"\\.\\.\\d+(?![\\w.])",e:hljs.IMMEDIATE_RE,r:10},{cN:"keyword",b:"\\b(?:function)",e:hljs.IMMEDIATE_RE,r:2},{cN:"keyword",b:"(?:if|in|break|next|repeat|else|for|return|switch|while|try|stop|warning|require|attach|detach|source|setMethod|setClass)\\b",e:hljs.IMMEDIATE_RE,r:1},{cN:"literal",b:"(?:NA|NA_integer_|NA_real_|NA_character_|NA_complex_)\\b",e:hljs.IMMEDIATE_RE,r:10},{cN:"literal",b:"(?:NULL|TRUE|FALSE|T|F|Inf|NaN)\\b",e:hljs.IMMEDIATE_RE,r:1},{cN:"identifier",b:"[a-zA-Z.][a-zA-Z0-9._]*\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"operator",b:"<\\-(?!\\s*\\d)",e:hljs.IMMEDIATE_RE,r:2},{cN:"operator",b:"\\->|<\\-",e:hljs.IMMEDIATE_RE,r:1},{cN:"operator",b:"%%|~",e:hljs.IMMEDIATE_RE},{cN:"operator",b:">=|<=|==|!=|\\|\\||&&|=|\\+|\\-|\\*|/|\\^|>|<|!|&|\\||\\$|:",e:hljs.IMMEDIATE_RE,r:0},{cN:"operator",b:"%",e:"%",i:"\\n",r:1},{cN:"identifier",b:"`",e:"`",r:0},{cN:"string",b:'"',e:'"',c:[hljs.BE],r:0},{cN:"string",b:"'",e:"'",c:[hljs.BE],r:0},{cN:"paren",b:"[[({\\])}]",e:hljs.IMMEDIATE_RE,r:0}]}};
+hljs.initHighlightingOnLoad();
+</script>
+
+
+
+<style type="text/css">
+body, td {
+   font-family: sans-serif;
+   background-color: white;
+   font-size: 13px;
+}
+
+body {
+  max-width: 800px;
+  margin: auto;
+  padding: 1em;
+  line-height: 20px;
+}
+
+tt, code, pre {
+   font-family: 'DejaVu Sans Mono', 'Droid Sans Mono', 'Lucida Console', Consolas, Monaco, monospace;
+}
+
+h1 {
+   font-size:2.2em;
+}
+
+h2 {
+   font-size:1.8em;
+}
+
+h3 {
+   font-size:1.4em;
+}
+
+h4 {
+   font-size:1.0em;
+}
+
+h5 {
+   font-size:0.9em;
+}
+
+h6 {
+   font-size:0.8em;
+}
+
+a:visited {
+   color: rgb(50%, 0%, 50%);
+}
+
+pre, img {
+  max-width: 100%;
+}
+pre {
+  overflow-x: auto;
+}
+pre code {
+   display: block; padding: 0.5em;
+}
+
+code {
+  font-size: 92%;
+  border: 1px solid #ccc;
+}
+
+code[class] {
+  background-color: #F8F8F8;
+}
+
+table, td, th {
+  border: none;
+}
+
+blockquote {
+   color:#666666;
+   margin:0;
+   padding-left: 1em;
+   border-left: 0.5em #EEE solid;
+}
+
+hr {
+   height: 0px;
+   border-bottom: none;
+   border-top-width: thin;
+   border-top-style: dotted;
+   border-top-color: #999999;
+}
+
+@media print {
+   * {
+      background: transparent !important;
+      color: black !important;
+      filter:none !important;
+      -ms-filter: none !important;
+   }
+
+   body {
+      font-size:12pt;
+      max-width:100%;
+   }
+
+   a, a:visited {
+      text-decoration: underline;
+   }
+
+   hr {
+      visibility: hidden;
+      page-break-before: always;
+   }
+
+   pre, blockquote {
+      padding-right: 1em;
+      page-break-inside: avoid;
+   }
+
+   tr, img {
+      page-break-inside: avoid;
+   }
+
+   img {
+      max-width: 100% !important;
+   }
+
+   @page :left {
+      margin: 15mm 20mm 15mm 10mm;
+   }
+
+   @page :right {
+      margin: 15mm 10mm 15mm 20mm;
+   }
+
+   p, h2, h3 {
+      orphans: 3; widows: 3;
+   }
+
+   h2, h3 {
+      page-break-after: avoid;
+   }
+}
+</style>
+
+
+
+</head>
+
+<body>
+<h1>P6: Exploring Prosper Loan Dataset</h1>
+
+<p>Author: Ying Wu</p>
+
+<h1>Introduction</h1>
+
+<p>Prosper is a company that offers a marketplace for peer to peer lending.
+Individuals can request loans and Prosper will calculate a score value
+indicating the risk of the loan the individual is asking for and then 
+add that loan into their system. Investors can choose the type of loans 
+that they would want to get exposure to allowing them to trade off risk 
+for return.</p>
+
+<p>My goal is to pick out an interesting facet of this loan data and explore
+it further using a d3.js visualization.</p>
+
+<h1>Exploration</h1>
+
+<p>Looking through the variable definitions, I was most intrigued by the categories.
+I exploring the relationship between these categories and the rest of the 
+variables available in the Prosper loan data.</p>
+
+<pre><code class="r">library(data.table)
+library(ggplot2)
+# dt = fread(&quot;prosperLoanData.csv&quot;) # everything is character
+df = read.table(&quot;prosperLoanData.csv&quot;, header=T, sep=&quot;,&quot;)
+dt = as.data.table(df)
+rm(df)
+
+dt$ListingNumber = as.factor(dt$ListingNumber)
+dt$ListingCreationDate = as.POSIXct(dt$ListingCreationDate)
+dt$Term = as.factor(dt$Term)
+dt$ClosedDate = as.Date(dt$ClosedDate)
+dt$ListingCategory..numeric. = factor(dt$ListingCategory..numeric.)
+levels(dt$ListingCategory..numeric.) = c(NA, &quot;Debt Consolidation&quot;, &quot;Home Improvement&quot;, &quot;Business&quot;, &quot;Personal Loan&quot;, 
+  &quot;Student Use&quot;, &quot;Auto&quot;, &quot;Other&quot;, &quot;Baby&amp;Adoption&quot;, &quot;Boat&quot;, &quot;Cosmetic Procedure&quot;,
+  &quot;Engagement Ring&quot;, &quot;Green Loans&quot;, &quot;Household Expenses&quot;, &quot;Large Purchases&quot;,
+  &quot;Medical/Dental&quot;, &quot;Motorcycle&quot;, &quot;RV&quot;, &quot;Taxes&quot;, &quot;Vacation&quot;, &quot;Wedding Loans&quot;)
+dt$DateCreditPulled = as.POSIXct(dt$DateCreditPulled)
+dt$FirstRecordedCreditLine = as.Date(dt$FirstRecordedCreditLine)
+dt$LoanOriginationDate = as.Date(dt$LoanOriginationDate)
+
+dt$IncomeRange = ordered(dt$IncomeRange, levels(dt$IncomeRange)[c(8, 1, 3, 4, 5, 6, 2, 7)])
+
+summary(dt)
+</code></pre>
+
+<pre><code>##                    ListingKey     ListingNumber   
+##  17A93590655669644DB4C06:     6   951186 :     6  
+##  349D3587495831350F0F648:     4   882888 :     4  
+##  47C1359638497431975670B:     4   892845 :     4  
+##  8474358854651984137201C:     4   1056749:     4  
+##  DE8535960513435199406CE:     4   1057901:     4  
+##  04C13599434217079754AEE:     3   875616 :     3  
+##  (Other)                :113912   (Other):113912  
+##  ListingCreationDate            CreditGrade    Term      
+##  Min.   :2005-11-09 20:44:28          :84984   12: 1614  
+##  1st Qu.:2008-09-19 10:02:14   C      : 5649   36:87778  
+##  Median :2012-06-16 12:37:19   D      : 5153   60:24545  
+##  Mean   :2011-07-09 08:30:35   B      : 4389             
+##  3rd Qu.:2013-09-09 19:40:48   AA     : 3509             
+##  Max.   :2014-03-10 12:20:53   HR     : 3508             
+##                                (Other): 6745             
+##                  LoanStatus      ClosedDate          BorrowerAPR     
+##  Current              :56576   Min.   :2005-11-25   Min.   :0.00653  
+##  Completed            :38074   1st Qu.:2009-07-14   1st Qu.:0.15629  
+##  Chargedoff           :11992   Median :2011-04-05   Median :0.20976  
+##  Defaulted            : 5018   Mean   :2011-03-07   Mean   :0.21883  
+##  Past Due (1-15 days) :  806   3rd Qu.:2013-01-30   3rd Qu.:0.28381  
+##  Past Due (31-60 days):  363   Max.   :2014-03-10   Max.   :0.51229  
+##  (Other)              : 1108   NA&#39;s   :58848        NA&#39;s   :25       
+##   BorrowerRate     LenderYield      EstimatedEffectiveYield
+##  Min.   :0.0000   Min.   :-0.0100   Min.   :-0.183         
+##  1st Qu.:0.1340   1st Qu.: 0.1242   1st Qu.: 0.116         
+##  Median :0.1840   Median : 0.1730   Median : 0.162         
+##  Mean   :0.1928   Mean   : 0.1827   Mean   : 0.169         
+##  3rd Qu.:0.2500   3rd Qu.: 0.2400   3rd Qu.: 0.224         
+##  Max.   :0.4975   Max.   : 0.4925   Max.   : 0.320         
+##                                     NA&#39;s   :29084          
+##  EstimatedLoss   EstimatedReturn  ProsperRating..numeric.
+##  Min.   :0.005   Min.   :-0.183   Min.   :1.000          
+##  1st Qu.:0.042   1st Qu.: 0.074   1st Qu.:3.000          
+##  Median :0.072   Median : 0.092   Median :4.000          
+##  Mean   :0.080   Mean   : 0.096   Mean   :4.072          
+##  3rd Qu.:0.112   3rd Qu.: 0.117   3rd Qu.:5.000          
+##  Max.   :0.366   Max.   : 0.284   Max.   :7.000          
+##  NA&#39;s   :29084   NA&#39;s   :29084    NA&#39;s   :29084          
+##  ProsperRating..Alpha.  ProsperScore        ListingCategory..numeric.
+##         :29084         Min.   : 1.00   Debt Consolidation:58308      
+##  C      :18345         1st Qu.: 4.00   Other             :10494      
+##  B      :15581         Median : 6.00   Home Improvement  : 7433      
+##  A      :14551         Mean   : 5.95   Business          : 7189      
+##  D      :14274         3rd Qu.: 8.00   Auto              : 2572      
+##  E      : 9795         Max.   :11.00   (Other)           :10976      
+##  (Other):12307         NA&#39;s   :29084   NA&#39;s              :16965      
+##  BorrowerState                      Occupation         EmploymentStatus
+##  CA     :14717   Other                   :28617   Employed     :67322  
+##  TX     : 6842   Professional            :13628   Full-time    :26355  
+##  NY     : 6729   Computer Programmer     : 4478   Self-employed: 6134  
+##  FL     : 6720   Executive               : 4311   Not available: 5347  
+##  IL     : 5921   Teacher                 : 3759   Other        : 3806  
+##         : 5515   Administrative Assistant: 3688                : 2255  
+##  (Other):67493   (Other)                 :55456   (Other)      : 2718  
+##  EmploymentStatusDuration IsBorrowerHomeowner CurrentlyInGroup
+##  Min.   :  0.00           False:56459         False:101218    
+##  1st Qu.: 26.00           True :57478         True : 12719    
+##  Median : 67.00                                               
+##  Mean   : 96.07                                               
+##  3rd Qu.:137.00                                               
+##  Max.   :755.00                                               
+##  NA&#39;s   :7625                                                 
+##                     GroupKey      DateCreditPulled             
+##                         :100596   Min.   :2005-11-09 00:30:04  
+##  783C3371218786870A73D20:  1140   1st Qu.:2008-09-16 22:25:27  
+##  3D4D3366260257624AB272D:   916   Median :2012-06-17 07:52:34  
+##  6A3B336601725506917317E:   698   Mean   :2011-07-09 15:51:53  
+##  FEF83377364176536637E50:   611   3rd Qu.:2013-09-11 14:30:24  
+##  C9643379247860156A00EC0:   342   Max.   :2014-03-10 12:20:56  
+##  (Other)                :  9634                                
+##  CreditScoreRangeLower CreditScoreRangeUpper FirstRecordedCreditLine
+##  Min.   :  0.0         Min.   : 19.0         Min.   :1947-08-24     
+##  1st Qu.:660.0         1st Qu.:679.0         1st Qu.:1990-06-01     
+##  Median :680.0         Median :699.0         Median :1995-11-01     
+##  Mean   :685.6         Mean   :704.6         Mean   :1994-11-17     
+##  3rd Qu.:720.0         3rd Qu.:739.0         3rd Qu.:2000-03-14     
+##  Max.   :880.0         Max.   :899.0         Max.   :2012-12-22     
+##  NA&#39;s   :591           NA&#39;s   :591           NA&#39;s   :697            
+##  CurrentCreditLines OpenCreditLines TotalCreditLinespast7years
+##  Min.   : 0.00      Min.   : 0.00   Min.   :  2.00            
+##  1st Qu.: 7.00      1st Qu.: 6.00   1st Qu.: 17.00            
+##  Median :10.00      Median : 9.00   Median : 25.00            
+##  Mean   :10.32      Mean   : 9.26   Mean   : 26.75            
+##  3rd Qu.:13.00      3rd Qu.:12.00   3rd Qu.: 35.00            
+##  Max.   :59.00      Max.   :54.00   Max.   :136.00            
+##  NA&#39;s   :7604       NA&#39;s   :7604    NA&#39;s   :697               
+##  OpenRevolvingAccounts OpenRevolvingMonthlyPayment InquiriesLast6Months
+##  Min.   : 0.00         Min.   :    0.0             Min.   :  0.000     
+##  1st Qu.: 4.00         1st Qu.:  114.0             1st Qu.:  0.000     
+##  Median : 6.00         Median :  271.0             Median :  1.000     
+##  Mean   : 6.97         Mean   :  398.3             Mean   :  1.435     
+##  3rd Qu.: 9.00         3rd Qu.:  525.0             3rd Qu.:  2.000     
+##  Max.   :51.00         Max.   :14985.0             Max.   :105.000     
+##                                                    NA&#39;s   :697         
+##  TotalInquiries    CurrentDelinquencies AmountDelinquent  
+##  Min.   :  0.000   Min.   : 0.0000      Min.   :     0.0  
+##  1st Qu.:  2.000   1st Qu.: 0.0000      1st Qu.:     0.0  
+##  Median :  4.000   Median : 0.0000      Median :     0.0  
+##  Mean   :  5.584   Mean   : 0.5921      Mean   :   984.5  
+##  3rd Qu.:  7.000   3rd Qu.: 0.0000      3rd Qu.:     0.0  
+##  Max.   :379.000   Max.   :83.0000      Max.   :463881.0  
+##  NA&#39;s   :1159      NA&#39;s   :697          NA&#39;s   :7622      
+##  DelinquenciesLast7Years PublicRecordsLast10Years
+##  Min.   : 0.000          Min.   : 0.0000         
+##  1st Qu.: 0.000          1st Qu.: 0.0000         
+##  Median : 0.000          Median : 0.0000         
+##  Mean   : 4.155          Mean   : 0.3126         
+##  3rd Qu.: 3.000          3rd Qu.: 0.0000         
+##  Max.   :99.000          Max.   :38.0000         
+##  NA&#39;s   :990             NA&#39;s   :697             
+##  PublicRecordsLast12Months RevolvingCreditBalance BankcardUtilization
+##  Min.   : 0.000            Min.   :      0        Min.   :0.000      
+##  1st Qu.: 0.000            1st Qu.:   3121        1st Qu.:0.310      
+##  Median : 0.000            Median :   8549        Median :0.600      
+##  Mean   : 0.015            Mean   :  17599        Mean   :0.561      
+##  3rd Qu.: 0.000            3rd Qu.:  19521        3rd Qu.:0.840      
+##  Max.   :20.000            Max.   :1435667        Max.   :5.950      
+##  NA&#39;s   :7604              NA&#39;s   :7604           NA&#39;s   :7604       
+##  AvailableBankcardCredit  TotalTrades    
+##  Min.   :     0          Min.   :  0.00  
+##  1st Qu.:   880          1st Qu.: 15.00  
+##  Median :  4100          Median : 22.00  
+##  Mean   : 11210          Mean   : 23.23  
+##  3rd Qu.: 13180          3rd Qu.: 30.00  
+##  Max.   :646285          Max.   :126.00  
+##  NA&#39;s   :7544            NA&#39;s   :7544    
+##  TradesNeverDelinquent..percentage. TradesOpenedLast6Months
+##  Min.   :0.000                      Min.   : 0.000         
+##  1st Qu.:0.820                      1st Qu.: 0.000         
+##  Median :0.940                      Median : 0.000         
+##  Mean   :0.886                      Mean   : 0.802         
+##  3rd Qu.:1.000                      3rd Qu.: 1.000         
+##  Max.   :1.000                      Max.   :20.000         
+##  NA&#39;s   :7544                       NA&#39;s   :7544           
+##  DebtToIncomeRatio         IncomeRange    IncomeVerifiable
+##  Min.   : 0.000    $25,000-49,999:32192   False:  8669    
+##  1st Qu.: 0.140    $50,000-74,999:31050   True :105268    
+##  Median : 0.220    $100,000+     :17337                   
+##  Mean   : 0.276    $75,000-99,999:16916                   
+##  3rd Qu.: 0.320    Not displayed : 7741                   
+##  Max.   :10.010    $1-24,999     : 7274                   
+##  NA&#39;s   :8554      (Other)       : 1427                   
+##  StatedMonthlyIncome                    LoanKey       TotalProsperLoans
+##  Min.   :      0     CB1B37030986463208432A1:     6   Min.   :0.00     
+##  1st Qu.:   3200     2DEE3698211017519D7333F:     4   1st Qu.:1.00     
+##  Median :   4667     9F4B37043517554537C364C:     4   Median :1.00     
+##  Mean   :   5608     D895370150591392337ED6D:     4   Mean   :1.42     
+##  3rd Qu.:   6825     E6FB37073953690388BC56D:     4   3rd Qu.:2.00     
+##  Max.   :1750003     0D8F37036734373301ED419:     3   Max.   :8.00     
+##                      (Other)                :113912   NA&#39;s   :91852    
+##  TotalProsperPaymentsBilled OnTimeProsperPayments
+##  Min.   :  0.00             Min.   :  0.00       
+##  1st Qu.:  9.00             1st Qu.:  9.00       
+##  Median : 16.00             Median : 15.00       
+##  Mean   : 22.93             Mean   : 22.27       
+##  3rd Qu.: 33.00             3rd Qu.: 32.00       
+##  Max.   :141.00             Max.   :141.00       
+##  NA&#39;s   :91852              NA&#39;s   :91852        
+##  ProsperPaymentsLessThanOneMonthLate ProsperPaymentsOneMonthPlusLate
+##  Min.   : 0.00                       Min.   : 0.00                  
+##  1st Qu.: 0.00                       1st Qu.: 0.00                  
+##  Median : 0.00                       Median : 0.00                  
+##  Mean   : 0.61                       Mean   : 0.05                  
+##  3rd Qu.: 0.00                       3rd Qu.: 0.00                  
+##  Max.   :42.00                       Max.   :21.00                  
+##  NA&#39;s   :91852                       NA&#39;s   :91852                  
+##  ProsperPrincipalBorrowed ProsperPrincipalOutstanding
+##  Min.   :    0            Min.   :    0              
+##  1st Qu.: 3500            1st Qu.:    0              
+##  Median : 6000            Median : 1627              
+##  Mean   : 8472            Mean   : 2930              
+##  3rd Qu.:11000            3rd Qu.: 4127              
+##  Max.   :72499            Max.   :23451              
+##  NA&#39;s   :91852            NA&#39;s   :91852              
+##  ScorexChangeAtTimeOfListing LoanCurrentDaysDelinquent
+##  Min.   :-209.00             Min.   :   0.0           
+##  1st Qu.: -35.00             1st Qu.:   0.0           
+##  Median :  -3.00             Median :   0.0           
+##  Mean   :  -3.22             Mean   : 152.8           
+##  3rd Qu.:  25.00             3rd Qu.:   0.0           
+##  Max.   : 286.00             Max.   :2704.0           
+##  NA&#39;s   :95009                                        
+##  LoanFirstDefaultedCycleNumber LoanMonthsSinceOrigination   LoanNumber    
+##  Min.   : 0.00                 Min.   :  0.0              Min.   :     1  
+##  1st Qu.: 9.00                 1st Qu.:  6.0              1st Qu.: 37332  
+##  Median :14.00                 Median : 21.0              Median : 68599  
+##  Mean   :16.27                 Mean   : 31.9              Mean   : 69444  
+##  3rd Qu.:22.00                 3rd Qu.: 65.0              3rd Qu.:101901  
+##  Max.   :44.00                 Max.   :100.0              Max.   :136486  
+##  NA&#39;s   :96985                                                            
+##  LoanOriginalAmount LoanOriginationDate  LoanOriginationQuarter
+##  Min.   : 1000      Min.   :2005-11-15   Q4 2013:14450         
+##  1st Qu.: 4000      1st Qu.:2008-10-02   Q1 2014:12172         
+##  Median : 6500      Median :2012-06-26   Q3 2013: 9180         
+##  Mean   : 8337      Mean   :2011-07-21   Q2 2013: 7099         
+##  3rd Qu.:12000      3rd Qu.:2013-09-18   Q3 2012: 5632         
+##  Max.   :35000      Max.   :2014-03-12   Q2 2012: 5061         
+##                                          (Other):60343         
+##                    MemberKey      MonthlyLoanPayment LP_CustomerPayments
+##  63CA34120866140639431C9:     9   Min.   :   0.0     Min.   :   -2.35   
+##  16083364744933457E57FB9:     8   1st Qu.: 131.6     1st Qu.: 1005.76   
+##  3A2F3380477699707C81385:     8   Median : 217.7     Median : 2583.83   
+##  4D9C3403302047712AD0CDD:     8   Mean   : 272.5     Mean   : 4183.08   
+##  739C338135235294782AE75:     8   3rd Qu.: 371.6     3rd Qu.: 5548.40   
+##  7E1733653050264822FAA3D:     8   Max.   :2251.5     Max.   :40702.39   
+##  (Other)                :113888                                         
+##  LP_CustomerPrincipalPayments LP_InterestandFees LP_ServiceFees   
+##  Min.   :    0.0              Min.   :   -2.35   Min.   :-664.87  
+##  1st Qu.:  500.9              1st Qu.:  274.87   1st Qu.: -73.18  
+##  Median : 1587.5              Median :  700.84   Median : -34.44  
+##  Mean   : 3105.5              Mean   : 1077.54   Mean   : -54.73  
+##  3rd Qu.: 4000.0              3rd Qu.: 1458.54   3rd Qu.: -13.92  
+##  Max.   :35000.0              Max.   :15617.03   Max.   :  32.06  
+##                                                                   
+##  LP_CollectionFees  LP_GrossPrincipalLoss LP_NetPrincipalLoss
+##  Min.   :-9274.75   Min.   :  -94.2       Min.   : -954.5    
+##  1st Qu.:    0.00   1st Qu.:    0.0       1st Qu.:    0.0    
+##  Median :    0.00   Median :    0.0       Median :    0.0    
+##  Mean   :  -14.24   Mean   :  700.4       Mean   :  681.4    
+##  3rd Qu.:    0.00   3rd Qu.:    0.0       3rd Qu.:    0.0    
+##  Max.   :    0.00   Max.   :25000.0       Max.   :25000.0    
+##                                                              
+##  LP_NonPrincipalRecoverypayments PercentFunded    Recommendations   
+##  Min.   :    0.00                Min.   :0.7000   Min.   : 0.00000  
+##  1st Qu.:    0.00                1st Qu.:1.0000   1st Qu.: 0.00000  
+##  Median :    0.00                Median :1.0000   Median : 0.00000  
+##  Mean   :   25.14                Mean   :0.9986   Mean   : 0.04803  
+##  3rd Qu.:    0.00                3rd Qu.:1.0000   3rd Qu.: 0.00000  
+##  Max.   :21117.90                Max.   :1.0125   Max.   :39.00000  
+##                                                                     
+##  InvestmentFromFriendsCount InvestmentFromFriendsAmount   Investors      
+##  Min.   : 0.00000           Min.   :    0.00            Min.   :   1.00  
+##  1st Qu.: 0.00000           1st Qu.:    0.00            1st Qu.:   2.00  
+##  Median : 0.00000           Median :    0.00            Median :  44.00  
+##  Mean   : 0.02346           Mean   :   16.55            Mean   :  80.48  
+##  3rd Qu.: 0.00000           3rd Qu.:    0.00            3rd Qu.: 115.00  
+##  Max.   :33.00000           Max.   :25000.00            Max.   :1189.00  
+## 
+</code></pre>
+
+<p>Some data summaries and reading online reveals that Prosper changed their API in
+the latter half of 2009. In order to have the most consistant dataset, I exclude
+data from before this period. I believe the most interesting comparison with 
+ListingCategory is the IncomeRange of the inviduals asking for the loan</p>
+
+<pre><code class="r">table(dt[ListingCreationDate &gt; &quot;2009-07-01&quot;]$ListingCategory..numeric., dt[ListingCreationDate &gt; &quot;2009-07-01&quot;]$IncomeRange)
+</code></pre>
+
+<pre><code>##                     
+##                      Not employed    $0 $1-24,999 $25,000-49,999
+##   Debt Consolidation          247    14      2339          14817
+##   Home Improvement             29     3       262           1682
+##   Business                     87    16       321           1481
+##   Personal Loan                 0     0         0              0
+##   Student Use                  19     1        77             90
+##   Auto                         24     0       272            885
+##   Other                       140    10       857           2953
+##   Baby&amp;Adoption                 1     0         5             54
+##   Boat                          1     0         6             17
+##   Cosmetic Procedure            1     0         9             36
+##   Engagement Ring               4     0         7             56
+##   Green Loans                   2     0         5             15
+##   Household Expenses           56     0       166            641
+##   Large Purchases               6     0        56            236
+##   Medical/Dental               16     1        92            484
+##   Motorcycle                    0     0        38             94
+##   RV                            0     0         6             11
+##   Taxes                         4     0        36            163
+##   Vacation                      8     0        59            239
+##   Wedding Loans                 3     0        41            213
+##                     
+##                      $50,000-74,999 $75,000-99,999 $100,000+ Not displayed
+##   Debt Consolidation          16721           9417      9625             0
+##   Home Improvement             1989           1229      1607             0
+##   Business                     1417            885      1091             0
+##   Personal Loan                   0              0         0             0
+##   Student Use                    55             17        15             0
+##   Auto                          604            258       194             0
+##   Other                        2545           1406      1307             0
+##   Baby&amp;Adoption                  59             28        52             0
+##   Boat                           28             17        16             0
+##   Cosmetic Procedure             28             13         4             0
+##   Engagement Ring                65             35        50             0
+##   Green Loans                    17             10        10             0
+##   Household Expenses            556            304       273             0
+##   Large Purchases               247            136       195             0
+##   Medical/Dental                441            248       240             0
+##   Motorcycle                     99             32        41             0
+##   RV                             18              7        10             0
+##   Taxes                         250            180       252             0
+##   Vacation                      227            141        94             0
+##   Wedding Loans                 255            134       125             0
+</code></pre>
+
+<pre><code class="r">ggplot(dt[ListingCreationDate &gt; &quot;2009-07-01&quot;], aes(ListingCategory..numeric., fill = IncomeRange)) + geom_bar() + coord_flip()
+</code></pre>
+
+<p><img src="data:image/png;base64,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" alt="plot of chunk summary1"/></p>
+
+<pre><code class="r">setnames(dt, &quot;ListingCategory..numeric.&quot;, &quot;ListingCategory&quot;)
+</code></pre>
+
+<p>merge income ranges and summarize</p>
+
+<pre><code class="r">tmp = dt[ListingCreationDate &gt; &quot;2009-07-01&quot;, list(Total = .N), by = list(ListingCategory, IncomeRange)]
+out = dcast(tmp, ListingCategory ~ IncomeRange, value.var = &quot;Total&quot;, fill = 0)
+out$LowIncome = out$&quot;Not employed&quot; + out$&quot;$0&quot; + out$&quot;$1-24,999&quot;
+out$MiddleIncome = out$&quot;$25,000-49,999&quot; + out$&quot;$50,000-74,999&quot;
+out$HighIncome = out$&quot;$75,000-99,999&quot; + out$&quot;$100,000+&quot;
+out[, Total := LowIncome + MiddleIncome + HighIncome]
+out[, LowIncomePct := round(LowIncome / Total, 3)]
+out[, MiddleIncomePct := round(MiddleIncome / Total, 3)]
+out[, HighIncomePct := 1 - MiddleIncomePct - LowIncomePct] # so all sum to 1
+out = out[ListingCategory != &quot;Other&quot;] # remove NA and &quot;Other&quot; since uninformative
+setorder(out, HighIncomePct)
+out$ListingCategory = factor(out$ListingCategory, levels = as.character(out$ListingCategory)) # reorder
+
+ggplot(melt(out, id.vars = &quot;ListingCategory&quot;, measure.vars = c(&quot;LowIncomePct&quot;, &quot;MiddleIncomePct&quot;, &quot;HighIncomePct&quot;)), 
+    aes(ListingCategory, value, fill = variable)) + geom_bar(stat = &#39;identity&#39;) + coord_flip()
+</code></pre>
+
+<p><img src="data:image/png;base64,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" alt="plot of chunk summary2"/></p>
+
+<p>write out the data</p>
+
+<pre><code class="r"># cleanup
+out = out[, .(ListingCategory, LowIncomePct, MiddleIncomePct, HighIncomePct, Total)]
+setnames(out, c(&quot;ListingCategory&quot;, &quot;LowIncome &lt;$25k&quot;, &quot;MiddleIncome&quot;, &quot;HighIncome &gt;$75k&quot;, &quot;Total&quot;))
+write.csv(out, file = &quot;data.csv&quot;, row.names = FALSE)
+</code></pre>
+
+<h1>Summary</h1>
+
+<p>Thinking from a perspective of an affliate advertiser, my goal is to identify 
+target audiences that might be interested in lending using Prosper based off
+historical loan data. To achieve this, I identified two interesting variables
+in the Prosper dataset: ListingCategory and IncomeRange. The former provides
+good sites to place ads for Prosper whereas the latter can be used to filter
+the customers to target these advertisements for.</p>
+
+<p>Based on the data, I found that the following class of individuals 
+would be a good target for Prosper ads:</p>
+
+<ul>
+<li>Low income students</li>
+<li>Middle income looking for cosmetic procedures</li>
+<li>High income in months before taxes being due</li>
+</ul>
+
+<p>These three categories are specific to each income category. Sorting by
+high income: Taxes have the highest percentage while Cosmetic Procedure
+and Student Use are the lowest. Sorting by middle income: Cosmetic Procedure
+had the highest percentage while Student Use and Taxes were the lowest.
+Sorting by low income: Student Use by far had the highest percentage
+with Taxes near the bottom and Cosmetic Procedure in the middle.</p>
+
+<h1>Design</h1>
+
+<p>I used a proportional stacked bar chart to show the number of loans for a 
+given category and IncomeRange. The IncomeRange is encoded using different 
+colors in a gradient to show the ordinal nature of this variable.</p>
+
+<p>For interactive component, I added in a mouseover tooltip on the Y-axis to 
+allow the user to see how many elements there were total. In addition, another
+mouseover showed the percentage of every income class.</p>
+
+<p>After collecting feedback on the initial version, I realized that I needed a
+better mechanism to emphasize the differences between the income classes. I added
+a dropdown menu to sort by different income classes to emphasize the differences
+between income classes. Additionally, I bolded the categories of interest and
+I sorted by Low income by default since &ldquo;Student Use&rdquo; had the most striking 
+example of percentage overrepresentation by income class.</p>
+
+<h1>Feedback</h1>
+
+<p>I asked the following questions and wrote down the respones below:</p>
+
+<ul>
+<li>What do you notice in the visualization?</li>
+<li>What questions do you have about the data?</li>
+<li>What relationships do you notice?</li>
+<li>What do you think is the main takeaway from this visualization?</li>
+<li>Is there something you don’t understand in the graphic?</li>
+</ul>
+
+<h2>Feedback 1 - Lynn</h2>
+
+<p>Poor students are one of the highest proportions.</p>
+
+<p>Could you sort by the other income classes too (low and middle)?</p>
+
+<p>Middle income seems to dominate Cosmetic Procedure and transportation related
+(Auto and Motorcycle).</p>
+
+<p>Poor students would be a good target for Prosper advertisements.</p>
+
+<p>I understand the graphic.</p>
+
+<h2>Feedback 2 - Jamie</h2>
+
+<p>Middle income has the largest % of loans</p>
+
+<p>Could you also show the dollar amount of each loan?</p>
+
+<p>Low income have disporportionately high student loans</p>
+
+<p>I understand the graphic.</p>
+
+<h2>Feedback 3 - Jo</h2>
+
+<p>The difference between what poor people ask for loans on and what rich people
+ask for loans on is quite big.</p>
+
+<p>Could you sort by low income instead of high?</p>
+
+<p>Why students getting loans from Prosper rather than regular student loans.</p>
+
+<p>Low income is more likely to use prosper for student loans. Middle income for 
+status symbol items like beauty, and cars. High income for home improvement or taxes.</p>
+
+<p>I understand the graphic. </p>
+
+<h1>Resources</h1>
+
+<p><a href="https://developers.prosper.com/docs/investor/loans-api/">https://developers.prosper.com/docs/investor/loans-api/</a></p>
+
+<p><a href="http://square.github.io/intro-to-d3/">http://square.github.io/intro-to-d3/</a></p>
+
+<p><a href="https://github.com/d3/d3/wiki/">https://github.com/d3/d3/wiki/</a></p>
+
+<p><a href="https://bl.ocks.org/mbostock/3886208">https://bl.ocks.org/mbostock/3886208</a> </p>
+
+<p><a href="https://github.com/d3/d3/blob/master/API.md">https://github.com/d3/d3/blob/master/API.md</a></p>
+
+<p>various stackoverflow and plnkr/jsfiddle/bl.ocks examples</p>
+
+</body>
+
+</html>
